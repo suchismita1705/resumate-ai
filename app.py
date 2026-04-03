@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import matplotlib.pyplot as plt
 
 from resume_parser import extract_resume_text, extract_skills
 from skill_matcher import find_skill_gap, calculate_ats_score
@@ -36,7 +37,7 @@ if st.button("Analyze Resume"):
 
     if uploaded_file is not None:
 
-        # Extract text
+        # Extract resume text
         resume_text = extract_resume_text(uploaded_file)
 
         # Get JD skills
@@ -45,16 +46,15 @@ if st.button("Analyze Resume"):
         # Extract resume skills
         resume_skills = extract_skills(resume_text, jd_skills)
 
-        # Find match + gap
+        # Match + gap
         matched_skills, missing_skills = find_skill_gap(resume_skills, jd_skills)
 
         # ATS Score
         ats_score = calculate_ats_score(matched_skills, jd_skills)
 
         # =========================
-        # DISPLAY RESULTS
+        # ATS SCORE DISPLAY
         # =========================
-
         st.markdown("## 📊 ATS Score")
         st.progress(int(ats_score))
         st.success(f"Your ATS Score: {ats_score}%")
@@ -64,7 +64,7 @@ if st.button("Analyze Resume"):
         elif ats_score >= 50:
             st.warning("⚡ Good, but can improve")
         else:
-            st.error("❌ Needs improvement")
+            st.error("❌ Needs improvement — try adding missing skills to your resume")
 
         # =========================
         # SKILLS DISPLAY
@@ -88,6 +88,19 @@ if st.button("Analyze Resume"):
                 st.success("No missing skills 🎉")
 
         # =========================
+        # PIE CHART
+        # =========================
+        st.markdown("## 📊 Skill Analysis Chart")
+
+        labels = ['Matched Skills', 'Missing Skills']
+        sizes = [len(matched_skills), len(missing_skills)]
+
+        fig, ax = plt.subplots()
+        ax.pie(sizes, labels=labels, autopct='%1.1f%%')
+
+        st.pyplot(fig)
+
+        # =========================
         # COURSE RECOMMENDATION
         # =========================
         st.markdown("## 📚 Recommended Courses")
@@ -96,7 +109,7 @@ if st.button("Analyze Resume"):
 
         if recommendations:
             for skill, course in recommendations.items():
-                st.write(f"🔹 **{skill}** → {course}")
+                st.markdown(f"🔹 **{skill.upper()}** → {course}")
         else:
             st.success("No courses needed 🎉")
 

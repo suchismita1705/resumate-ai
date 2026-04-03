@@ -1,4 +1,7 @@
-# Function to recommend courses based on missing skills
+# =========================
+# COURSE RECOMMENDER
+# =========================
+
 def recommend_courses(missing_skills):
     recommendations = {}
 
