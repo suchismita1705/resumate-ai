@@ -1,149 +1,97 @@
 import streamlit as st
+from resume_parser import extract_resume_text, extract_skills, match_skills
+from fpdf import FPDF
 import json
 import os
-from fpdf import FPDF
 
-from resume_parser import extract_resume_text, extract_skills
-from jd_parser import extract_jd_skills
-from skill_matcher import find_skill_gap, calculate_match_score
+# =========================
+# PAGE CONFIG
+# =========================
+st.set_page_config(page_title="ResuMate AI", page_icon="📄", layout="centered")
 
-# ------------------ PAGE CONFIG ------------------
-st.set_page_config(page_title="ResuMate AI", layout="centered")
+st.title("📄 ResuMate AI")
+st.subheader("AI-Powered Resume Analyzer")
 
-st.title("🚀 ResuMate AI")
-st.subheader("Smart Resume Analyzer & Skill Gap Finder")
-
-# ------------------ LOAD DATA ------------------
-with open("data/skills.txt") as f:
-    skills_list = [line.strip().lower() for line in f]
-
-with open("data/skills.json") as f:
+# =========================
+# LOAD SKILLS DATA
+# =========================
+with open("skills.json", "r") as f:
     skill_data = json.load(f)
 
-# ------------------ SKILL NORMALIZATION ------------------
-skill_alias = {
-    "ml": "machine learning",
-    "ai": "machine learning",
-    "js": "javascript"
-}
+# =========================
+# FILE UPLOAD
+# =========================
+uploaded_file = st.file_uploader("Upload your Resume (PDF)", type=["pdf"])
 
-def normalize_skills(skills):
-    normalized = []
-    for skill in skills:
-        skill = skill.lower()
-        if skill in skill_alias:
-            normalized.append(skill_alias[skill])
-        else:
-            normalized.append(skill)
-    return list(set(normalized))
+# =========================
+# JOB ROLE INPUT
+# =========================
+job_role = st.selectbox("Select Job Role", list(skill_data.keys()))
 
-# ------------------ PDF FUNCTION ------------------
-def create_pdf(score, have, missing):
-    pdf = FPDF()
-    pdf.add_page()
+# =========================
+# PROCESS BUTTON
+# =========================
+if st.button("Analyze Resume"):
 
-    pdf.set_font("Arial", size=12)
+    if uploaded_file is not None and job_role:
 
-    pdf.cell(200, 10, txt="ResuMate AI - Resume Report", ln=True)
-    pdf.cell(200, 10, txt=f"Match Score: {score}%", ln=True)
+        # Extract text
+        resume_text = extract_resume_text(uploaded_file)
 
-    pdf.cell(200, 10, txt=" ", ln=True)
+        # Extract skills
+        resume_skills = extract_skills(resume_text)
 
-    pdf.cell(200, 10, txt="Skills You Have:", ln=True)
-    pdf.multi_cell(0, 10, ", ".join(have) if have else "None")
+        # Match skills
+        score, matched, missing = match_skills(resume_skills, job_role, skill_data)
 
-    pdf.cell(200, 10, txt=" ", ln=True)
-
-    pdf.cell(200, 10, txt="Missing Skills:", ln=True)
-    pdf.multi_cell(0, 10, ", ".join(missing) if missing else "None")
-
-    pdf.output("report.pdf")
-
-# ------------------ INPUT ------------------
-resume_file = st.file_uploader("📄 Upload Resume (PDF)", type=["pdf"])
-jd_text = st.text_area("💼 Enter Job Description or Job Role")
-
-# ------------------ ANALYSIS ------------------
-if st.button("🚀 Analyze Resume"):
-
-    if resume_file is not None and jd_text.strip() != "":
-
-        # Save temp file
-        with open("temp.pdf", "wb") as f:
-            f.write(resume_file.read())
-
-        # Extract
-        resume_text = extract_resume_text("temp.pdf")
-        resume_skills = extract_skills(resume_text, skills_list)
-        jd_skills = extract_jd_skills(jd_text, skills_list)
-
-        # Normalize
-        resume_skills = normalize_skills(resume_skills)
-        jd_skills = normalize_skills(jd_skills)
-
-        # Analysis
-        missing = find_skill_gap(resume_skills, jd_skills)
-        score = calculate_match_score(resume_skills, jd_skills)
-
-        # ------------------ OUTPUT ------------------
+        # =========================
+        # DISPLAY RESULTS
+        # =========================
         st.success("Analysis Complete ✅")
 
-        st.subheader("📊 Match Score")
+        st.markdown("### 📊 Match Score")
         st.progress(score / 100)
-        st.write(f"### {score}% match")
+        st.write(f"**{score}% match for {job_role}**")
 
-        st.subheader("✅ Skills You Have")
-        st.write(resume_skills if resume_skills else "No skills detected")
+        st.markdown("### ✅ Matched Skills")
+        st.write(matched if matched else "No matching skills found")
 
-        st.subheader("❌ Missing Skills")
+        st.markdown("### ❌ Missing Skills")
         st.write(missing if missing else "No missing skills 🎉")
 
-        # ------------------ SMART ROADMAP ------------------
-        st.subheader("📚 Smart Learning Roadmap")
+        # =========================
+        # GENERATE PDF REPORT
+        # =========================
+        pdf = FPDF()
+        pdf.add_page()
 
-        if missing:
-            for skill in missing:
-                st.markdown(f"## 🔹 {skill}")
+        pdf.set_font("Arial", size=12)
 
-                if skill in skill_data:
-                    data = skill_data[skill]
+        pdf.cell(200, 10, txt="ResuMate AI Report", ln=True)
 
-                    st.markdown("### 📘 Roadmap")
-                    for step in data.get("roadmap", []):
-                        st.write(f"- {step}")
+        pdf.cell(200, 10, txt=f"Job Role: {job_role}", ln=True)
+        pdf.cell(200, 10, txt=f"Score: {score}%", ln=True)
 
-                    st.markdown("### 🚀 Project Idea")
-                    st.write(data.get("project", "Build a project using this skill"))
+        pdf.cell(200, 10, txt="Matched Skills:", ln=True)
+        for skill in matched:
+            pdf.cell(200, 10, txt=f"- {skill}", ln=True)
 
-                    st.markdown("### 🔗 Best Resources")
-                    for link in data.get("resources", []):
-                        st.markdown(f"[Open Resource]({link})")
+        pdf.cell(200, 10, txt="Missing Skills:", ln=True)
+        for skill in missing:
+            pdf.cell(200, 10, txt=f"- {skill}", ln=True)
 
-                else:
-                    st.write("Basic learning recommended")
-                    st.markdown(f"[🔍 Search {skill}](https://www.google.com/search?q=learn+{skill})")
+        pdf.output("report.pdf")
 
-        else:
-            st.write("🎉 You are well matched for this role!")
-
-        # ------------------ PDF DOWNLOAD ------------------
-        st.subheader("📥 Download Report")
-
-        if st.button("Generate PDF"):
-            create_pdf(score, resume_skills, missing)
-
-            with open("report.pdf", "rb") as file:
-                st.download_button(
-                    label="📄 Download PDF",
-                    data=file,
-                    file_name="ResuMate_Report.pdf",
-                    mime="application/pdf"
-                )
-
-        # Cleanup
-        if os.path.exists("temp.pdf"):
-            os.remove("temp.pdf")
+        # =========================
+        # DOWNLOAD BUTTON
+        # =========================
+        with open("report.pdf", "rb") as file:
+            st.download_button(
+                label="📥 Download Report",
+                data=file,
+                file_name="ResuMate_Report.pdf",
+                mime="application/pdf"
+            )
 
     else:
-        st.error("⚠️ Please upload a resume and enter job role")
-print("NEW VERSION")
+        st.error("⚠️ Please upload a resume and select a job role")
