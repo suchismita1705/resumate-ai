@@ -1,0 +1,61 @@
+{
+  "machine learning": {
+    "category": "AI",
+    "level": "core",
+    "roadmap": [
+      "Learn supervised vs unsupervised learning",
+      "Study regression and classification",
+      "Understand model evaluation"
+    ],
+    "resources": [
+      "https://www.coursera.org/learn/machine-learning",
+      "https://www.kaggle.com/learn/intro-to-machine-learning"
+    ],
+    "project": "Build a house price prediction model"
+  },
+
+  "python": {
+    "category": "programming",
+    "level": "core",
+    "roadmap": [
+      "Learn syntax and data types",
+      "Practice loops and functions",
+      "Work with libraries like pandas"
+    ],
+    "resources": [
+      "https://www.learnpython.org/",
+      "https://www.w3schools.com/python/"
+    ],
+    "project": "Build a data analysis script"
+  },
+
+  "sql": {
+    "category": "database",
+    "level": "important",
+    "roadmap": [
+      "Learn SELECT queries",
+      "Understand JOINs",
+      "Practice aggregation"
+    ],
+    "resources": [
+      "https://www.w3schools.com/sql/",
+      "https://mode.com/sql-tutorial/"
+    ],
+    "project": "Analyze a dataset using SQL"
+  },
+
+  "data structures": {
+    "category": "cs fundamentals",
+    "level": "core",
+    "roadmap": [
+      "Learn arrays, stacks, queues",
+      "Understand trees and graphs",
+      "Solve problems on LeetCode"
+    ],
+    "resources": [
+      "https://www.geeksforgeeks.org/data-structures/",
+      "https://leetcode.com/"
+    ],
+    "project": "Implement a mini search engine"
+  }
+}
