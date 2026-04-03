@@ -1,20 +1,4 @@
 import pdfplumber
-import spacy
-import os
-
-# =========================
-# LOAD SPACY MODEL SAFELY
-# =========================
-def load_spacy_model():
-    try:
-        return spacy.load("en_core_web_sm")
-    except:
-        # Download model if not present (for Streamlit Cloud)
-        os.system("python -m spacy download en_core_web_sm")
-        return spacy.load("en_core_web_sm")
-
-nlp = load_spacy_model()
-
 
 # =========================
 # EXTRACT TEXT FROM PDF
@@ -36,38 +20,38 @@ def extract_resume_text(uploaded_file):
 # =========================
 SKILL_KEYWORDS = [
     # Programming
-    "python", "java", "c++", "c", "javascript", "typescript",
+    "python", "java", "c++", "c", "javascript",
 
     # Web
     "html", "css", "react", "angular", "node", "express",
 
     # Data / AI
-    "machine learning", "deep learning", "nlp", "data science",
-    "pandas", "numpy", "tensorflow", "pytorch", "scikit-learn",
+    "machine learning", "deep learning", "nlp",
+    "pandas", "numpy", "tensorflow", "pytorch",
 
     # Tools
-    "git", "github", "docker", "kubernetes",
+    "git", "github", "docker",
 
     # Databases
-    "sql", "mysql", "postgresql", "mongodb",
+    "sql", "mysql", "mongodb",
 
     # Cloud
-    "aws", "azure", "gcp"
+    "aws", "azure"
 ]
 
 
 # =========================
-# EXTRACT SKILLS USING NLP
+# EXTRACT SKILLS (NO SPACY)
 # =========================
 def extract_skills(text):
-    doc = nlp(text.lower())
-    found_skills = set()
+    text = text.lower()
+    found_skills = []
 
-    for token in doc:
-        if token.text in SKILL_KEYWORDS:
-            found_skills.add(token.text)
+    for skill in SKILL_KEYWORDS:
+        if skill in text:
+            found_skills.append(skill)
 
-    return list(found_skills)
+    return list(set(found_skills))
 
 
 # =========================
