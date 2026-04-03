@@ -15,7 +15,7 @@ st.subheader("AI-Powered Resume Analyzer")
 # =========================
 # LOAD SKILLS DATA
 # =========================
-with open("skills.json", "r") as f:
+with open("data/skills.json", "r") as f:
     skill_data = json.load(f)
 
 # =========================
