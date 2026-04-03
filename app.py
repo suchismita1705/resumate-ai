@@ -2,8 +2,8 @@ import streamlit as st
 import json
 
 from resume_parser import extract_resume_text, extract_skills
-from jd_parser import extract_jd_skills
-from skill_matcher import find_skill_gap
+from skill_matcher import find_skill_gap, calculate_ats_score
+from recommender import recommend_courses
 
 # =========================
 # PAGE CONFIG
@@ -19,25 +19,15 @@ st.subheader("AI-Powered Resume Analyzer")
 with open("data/skills.json", "r") as f:
     skill_data = json.load(f)
 
-# Flatten skills list from JSON
-skills_list = []
-for category in skill_data:
-    skills_list.extend(skill_data[category]["roadmap"])
-
-skills_list = [s.lower() for s in skills_list]
-
 # =========================
 # FILE UPLOAD
 # =========================
 uploaded_file = st.file_uploader("Upload your Resume (PDF)", type=["pdf"])
 
 # =========================
-# JOB ROLE INPUT
+# JOB ROLE SELECT
 # =========================
-job_role = st.selectbox(
-    "Select Job Role",
-    ["machine learning", "data science", "web development", "data analyst"]
-)
+job_role = st.selectbox("Select Job Role", list(skill_data.keys()))
 
 # =========================
 # ANALYZE BUTTON
@@ -46,32 +36,35 @@ if st.button("Analyze Resume"):
 
     if uploaded_file is not None:
 
-        # Extract resume text
+        # Extract text
         resume_text = extract_resume_text(uploaded_file)
 
-        # Extract skills
-        resume_skills = extract_skills(resume_text, skills_list)
-        jd_skills = extract_jd_skills(job_role)
+        # Get JD skills
+        jd_skills = skill_data[job_role]["skills"]
 
-        # Find missing skills
-        missing_skills = find_skill_gap(resume_skills, jd_skills)
+        # Extract resume skills
+        resume_skills = extract_skills(resume_text, jd_skills)
 
-        # =========================
-        # ATS SCORE CALCULATION
-        # =========================
-        matched_skills = list(set(resume_skills) & set(jd_skills))
+        # Find match + gap
+        matched_skills, missing_skills = find_skill_gap(resume_skills, jd_skills)
 
-        if len(jd_skills) > 0:
-            ats_score = int((len(matched_skills) / len(jd_skills)) * 100)
-        else:
-            ats_score = 0
+        # ATS Score
+        ats_score = calculate_ats_score(matched_skills, jd_skills)
 
         # =========================
         # DISPLAY RESULTS
         # =========================
+
         st.markdown("## 📊 ATS Score")
-        st.progress(ats_score / 100)
-        st.write(f"### {ats_score}% Match")
+        st.progress(int(ats_score))
+        st.success(f"Your ATS Score: {ats_score}%")
+
+        if ats_score >= 80:
+            st.success("🔥 Excellent Resume!")
+        elif ats_score >= 50:
+            st.warning("⚡ Good, but can improve")
+        else:
+            st.error("❌ Needs improvement")
 
         # =========================
         # SKILLS DISPLAY
@@ -93,6 +86,19 @@ if st.button("Analyze Resume"):
                     st.error(skill)
             else:
                 st.success("No missing skills 🎉")
+
+        # =========================
+        # COURSE RECOMMENDATION
+        # =========================
+        st.markdown("## 📚 Recommended Courses")
+
+        recommendations = recommend_courses(missing_skills)
+
+        if recommendations:
+            for skill, course in recommendations.items():
+                st.write(f"🔹 **{skill}** → {course}")
+        else:
+            st.success("No courses needed 🎉")
 
     else:
         st.warning("Please upload a resume first!")
