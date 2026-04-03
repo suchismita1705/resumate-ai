@@ -146,3 +146,4 @@ if st.button("🚀 Analyze Resume"):
 
     else:
         st.error("⚠️ Please upload a resume and enter job role")
+print("NEW VERSION")
